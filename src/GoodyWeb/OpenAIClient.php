@@ -11,10 +11,11 @@ class OpenAIClient {
     public $model;
 
     public function __construct() {
+        $this->version = "v1";
         $this->api_key = "";
         $this->organization = "";
         $this->model = "davinci";
-        $this->file_name_prefix = "GW";
+        $this->file_name_prefix = "";
     }
 
     // $jsonl is an array of json objects
@@ -59,9 +60,9 @@ class OpenAIClient {
 
         $client = new Client();
 
-        $response = $client->request('POST', 'https://api.openai.com/v1/files', [
+        $response = $client->request('POST', "https://api.openai.com/{$this->version}/files", [
             'headers' => [
-                'Authorization' => 'Bearer ' . $this->api_key,
+                'Authorization' => "Bearer {$this->api_key}",
             ],
             'multipart' => [
                 [
@@ -85,9 +86,9 @@ class OpenAIClient {
 
         $client = new Client();
 
-        $response = $client->request('GET', "https://api.openai.com/v1/files/{$file_id}", [
+        $response = $client->request('GET', "https://api.openai.com/{$this->version}/files/{$file_id}", [
             'headers' => [
-                'Authorization' => 'Bearer ' . $this->api_key,
+                'Authorization' => "Bearer {$this->api_key}",
             ],
         ]);
 
@@ -100,9 +101,9 @@ class OpenAIClient {
 
         $client = new Client();
 
-        $response = $client->request('GET', "https://api.openai.com/v1/fine-tunes/{$fine_tune_id}", [
+        $response = $client->request('GET', "https://api.openai.com/{$this->version}/fine-tunes/{$fine_tune_id}", [
             'headers' => [
-                'Authorization' => 'Bearer ' . $this->api_key,
+                'Authorization' => "Bearer {$this->api_key}",
             ],
         ]);
 
@@ -110,20 +111,56 @@ class OpenAIClient {
 
     }
 
-    public function createFineTune( $training_file ) {
+    public function createFineTune( $training_file, $options=null ) {
+
+        // Default options
+        $model = $this->model;
+        $n_epochs = 4;
+        $batch_size = null;
+        $learning_rate_multiplier = null;
+        $prompt_loss_weight = 0.01;
+        $suffix = null;
+
+        // Options override if options were specified
+        if( !empty($options) && is_object($options) ) {
+
+            if( isset($options->model) )
+            $model = $options->model;
+
+            if( isset($options->n_epochs) )
+            $n_epochs = $options->n_epochs;
+
+            if( isset($options->batch_size) )
+            $batch_size = $options->batch_size;
+
+            if( isset($options->learning_rate_multiplier) )
+            $learning_rate_multiplier = $options->learning_rate_multiplier;
+
+            if( isset($options->prompt_loss_weight) )
+            $prompt_loss_weight = $options->prompt_loss_weight;
+
+            if( isset($options->suffix) )
+            $suffix = $options->suffix;
+
+        }
 
         $client = new Client([
-            'base_uri' => 'https://api.openai.com/v1/',
+            'base_uri' => "https://api.openai.com/{$this->version}/",
         ]);
 
         $response = $client->post('fine-tunes', [
             'headers' => [
                 'Content-Type' => 'application/json',
-                'Authorization' => 'Bearer ' . $this->api_key,
+                'Authorization' => "Bearer {$this->api_key}",
             ],
             'json' => [
                 'training_file' => $training_file,
-                'model' => $this->model,
+                'model' => $model,
+                'n_epochs' => $n_epochs,
+                'batch_size' => $batch_size,
+                'learning_rate_multiplier' => $learning_rate_multiplier,
+                'prompt_loss_weight' => $prompt_loss_weight,
+                'suffix' => $suffix
             ],
         ]);
 
@@ -134,9 +171,9 @@ class OpenAIClient {
     public function listModels() {
 
         $client = new Client([
-            'base_uri' => 'https://api.openai.com/v1/',
+            'base_uri' => "https://api.openai.com/{$this->version}/",
             'headers' => [
-                'Authorization' => 'Bearer '.$this->api_key,
+                'Authorization' => "Bearer {$this->api_key}",
             ],
         ]);
 
@@ -145,6 +182,110 @@ class OpenAIClient {
         return $response->getBody();
 
     }
+
+    public function completion( $prompt, $options=null ) {
+
+        // Default options
+        $model = $this->model;
+        $suffix = null;
+        $max_tokens = 16;
+        $temperature = 1;
+        $top_p = 1;
+        $n = 1;
+        $stream = false;
+        $logprobs = null;
+        $echo = false;
+        $stop = null;
+        $presence_penalty = 0;
+        $frequency_penalty = 0;
+        $best_of = 1;
+        $logit_bias = null;
+
+        // Options override if options were specified
+        if( !empty($options) && is_object($options) ) {
+
+            if( isset($options->model) )
+            $model = $options->model;
+
+            if( isset($options->suffix) )
+            $suffix = $options->suffix;
+
+            if( isset($options->max_tokens) )
+            $max_tokens = $options->max_tokens;
+
+            if( isset($options->temperature) )
+            $temperature = $options->temperature;
+
+            if( isset($options->top_p) )
+            $top_p = $options->top_p;
+
+            if( isset($options->n) )
+            $n = $options->n;
+
+            if( isset($options->stream) )
+            $stream = $options->stream;
+
+            if( isset($options->logprobs) )
+            $logprobs = $options->logprobs;
+
+            if( isset($options->echo) )
+            $echo = $options->echo;
+
+            if( isset($options->stop) )
+            $stop = $options->stop;
+
+            if( isset($options->presence_penalty) )
+            $presence_penalty = $options->presence_penalty;
+
+            if( isset($options->frequency_penalty) )
+            $frequency_penalty = $options->frequency_penalty;
+
+            if( isset($options->best_of) )
+            $best_of = $options->best_of;
+
+            if( isset($options->logit_bias) )
+            $logit_bias = $options->logit_bias;
+
+        }
+        $json = [
+            'model' => $model,
+            'prompt' => $prompt,
+            'suffix' => $suffix,
+            'max_tokens' => $max_tokens,
+            'temperature' => $temperature,
+            'top_p' => $top_p,
+            'n' => $n,
+            'stream' => $stream,
+            'logprobs' => $logprobs,
+            'echo' => $echo,
+            'stop' => $stop,
+            'presence_penalty' => $presence_penalty,
+            'frequency_penalty' => $frequency_penalty,
+            'best_of' => $best_of
+        ];
+
+        if( !empty( $logit_bias ) ) {
+            $json['logit_bias'] = $logit_bias;
+        }
+
+        // Request to OpenAI
+        $client = new Client();
+        $response = $client->post("https://api.openai.com/{$this->version}/completions", [
+                'headers' => [
+                'Content-Type' => 'application/json',
+                'Authorization' => "Bearer {$this->api_key}",
+            ],
+            'json' => $json
+        ]);
+
+        // Process the response
+        $completion_response_json_string = $response->getBody();
+        $completion_object = json_decode($completion_response_json_string);
+
+        return $completion_object;
+
+    }
+
 
 
 }
