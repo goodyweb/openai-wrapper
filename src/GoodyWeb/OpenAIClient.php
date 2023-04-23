@@ -81,6 +81,21 @@ class OpenAIClient {
 
     }
 
+    public function listFiles() {
+
+        $client = new Client();
+
+        $response = $client->request('GET', "https://api.openai.com/{$this->version}/files", [
+            'headers' => [
+                'Authorization' => "Bearer {$this->api_key}",
+            ],
+        ]);
+
+        $json_string_response = $response->getBody();
+        return json_decode($json_string_response);
+
+    }
+
     // $file_id is the ID of the uploaded file
     public function retrieveFile( $file_id ) {
 
@@ -95,6 +110,22 @@ class OpenAIClient {
         return $response->getBody();
 
     }
+
+    // $file_id is the ID of the uploaded file
+    public function retrieveFileContent( $file_id ) {
+
+        $client = new Client();
+
+        $response = $client->request('GET', "https://api.openai.com/{$this->version}/files/{$file_id}/content", [
+            'headers' => [
+                'Authorization' => "Bearer {$this->api_key}",
+            ],
+        ]);
+
+        return $response->getBody();
+
+    }
+
 
     // $fine_tune_id is the ID of the fine-tune event
     public function retrieveFineTune( $fine_tune_id ) {
